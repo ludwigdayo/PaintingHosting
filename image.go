@@ -2,45 +2,46 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
-	"log"
-	"os"
-	"io/ioutil"
 	"image"
 	"image/jpeg"
 	_ "image/png"
-	"encoding/base64"
+	"io/ioutil"
+	"log"
+	"os"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/nfnt/resize"
 )
 
 // 图片元数据
 type Image struct {
-	ID          int           `json:"id"`
-	ImageName   string        `json:"imageName"`
-	Author      string        `json:"author"`
-	CreateTime  string        `json:"createTime"`
-	Story       string        `json:"story"`
-	Price       int           `json:"price"`
-	Path        string        `json:"image"`
-	Tags        string        `json:"tags"`
+	ID         int    `json:"id"`
+	ImageName  string `json:"imageName"`
+	Author     string `json:"author"`
+	CreateTime string `json:"createTime"`
+	Story      string `json:"story"`
+	Price      int    `json:"price"`
+	Path       string `json:"image"`
+	Tags       string `json:"tags"`
 }
 
 // 包含图片本体
 type ImageData struct {
-	Metadata Image		`json:"metadata"`
-	ImageStr string		`json:"image"`
+	Metadata Image  `json:"metadata"`
+	ImageStr string `json:"image"`
 }
 
 // CREATE TABLE IMAGES(
 // ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-// IMAGENAME TEXT NOT NULL,		
-// AUTHOR TEXT NOT NULL,		
-// CREATETIME TEXT NOT NULL,	
-// STORY TEXT NOT NULL,			
-// PRICE INT NOT NULL,			
-// PATH TEXT NOT NULL,	
-// TAGS TEXT NOT NULL			
+// IMAGENAME TEXT NOT NULL,
+// AUTHOR TEXT NOT NULL,
+// CREATETIME TEXT NOT NULL,
+// STORY TEXT NOT NULL,
+// PRICE INT NOT NULL,
+// PATH TEXT NOT NULL,
+// TAGS TEXT NOT NULL
 // );
 
 // 查询图像
@@ -48,7 +49,7 @@ func QueryImages(start int, end int, isThumbnail bool) ([]ImageData, error) {
 	query := fmt.Sprintf("SELECT ID, IMAGENAME, AUTHOR, CREATETIME, STORY, PRICE, PATH, TAGS FROM IMAGES LIMIT %d OFFSET %d", end-start, start)
 
 	// 只查一条则使用ID查询，这个是不完善的解决方法
-	if(end - start == 0){
+	if end-start == 0 {
 		query = fmt.Sprintf("SELECT ID, IMAGENAME, AUTHOR, CREATETIME, STORY, PRICE, PATH, TAGS FROM IMAGES WHERE ID = %d", start)
 	}
 
@@ -93,7 +94,7 @@ func QueryImages(start int, end int, isThumbnail bool) ([]ImageData, error) {
 
 		var imgBytes []byte
 
-		if (isThumbnail) {
+		if isThumbnail {
 			// 解码原始图像文件
 			img, _, err := image.Decode(file)
 			if err != nil {
@@ -128,17 +129,17 @@ func QueryImages(start int, end int, isThumbnail bool) ([]ImageData, error) {
 
 		// 创建 Image 结构体对象
 		imageData := ImageData{
-			Metadata : Image{
-				ID:          id,
-				ImageName:   imageName,
-				Author:      author,
-				CreateTime:  createTime,
-				Story:       story,
-				Price:       price,
-				Path:        "",
-				Tags:        tags,
+			Metadata: Image{
+				ID:         id,
+				ImageName:  imageName,
+				Author:     author,
+				CreateTime: createTime,
+				Story:      story,
+				Price:      price,
+				Path:       "",
+				Tags:       tags,
 			},
-			ImageStr : base64Str,
+			ImageStr: base64Str,
 		}
 
 		imageList = append(imageList, imageData)
@@ -151,7 +152,7 @@ func QueryImages(start int, end int, isThumbnail bool) ([]ImageData, error) {
 func SaveImageToDatabase(imageMetaData Image) error {
 	// 执行插入语句将图片数据插入数据库
 	sql := `INSERT INTO IMAGES (IMAGENAME, AUTHOR, CREATETIME, STORY, PRICE, PATH, TAGS) VALUES (?, ?, ?, ?, ?, ?, ?)`
-	
+
 	db, err := openDB()
 	if err != nil {
 		log.Println("Open database failed", err)
@@ -161,24 +162,24 @@ func SaveImageToDatabase(imageMetaData Image) error {
 
 	stmt, err := db.Prepare(sql)
 	if err != nil {
-    	log.Println("Failed to prepare SQL statement:", err)
-    	return err
+		log.Println("Failed to prepare SQL statement:", err)
+		return err
 	}
 	defer stmt.Close()
 
 	_, err = stmt.Exec(imageMetaData.ImageName, imageMetaData.Author, imageMetaData.CreateTime, imageMetaData.Story, imageMetaData.Price, imageMetaData.Path, imageMetaData.Tags)
 	if err != nil {
-	    log.Println("Failed to insert row into IMAGES table:", err)
-	    return err
+		log.Println("Failed to insert row into IMAGES table:", err)
+		return err
 	}
 
 	return nil
 }
 
-type Author struct{
-	AuthorName		string
-	Introduce		string
-	Image			string
+type Author struct {
+	AuthorName string
+	Introduce  string
+	Image      string
 }
 
 // CREATE TABLE AUTHORS(
@@ -186,7 +187,6 @@ type Author struct{
 // INTRODUCE TEXT NOT NULL,
 // IMAGE TEXT NOT NULL
 // );
-
 
 func getAuthorInfo(authorName string) (Author, error) {
 	db, err := openDB()
@@ -239,11 +239,11 @@ func saveAuthorInfo(author Author) error {
 	return nil
 }
 
-type Interact struct{
-	ImageId 	int
-	Like		int
-	Favorite	int
-	Comment		string
+type Interact struct {
+	ImageId  int
+	Like     int
+	Favorite int
+	Comment  string
 }
 
 // CREATE TABLE INTERACT(
@@ -268,8 +268,8 @@ func saveInteractInfo(interact Interact) error {
 	// 执行更新操作
 	_, err = db.Exec(sql, interact.ImageId, interact.Like, interact.Favorite, interact.Comment)
 	if err != nil {
-    	log.Println("Failed to update row:", err)
-    	return err
+		log.Println("Failed to update row:", err)
+		return err
 	}
 
 	// 更新成功

@@ -15,7 +15,7 @@ import (
 )
 
 // 路径
-var localDirPath = "./images-data"
+var localDirPath = "./ImagesData"
 var dbPath = "./db/imageshow-server-database.db"
 var frontPath = "./dist"
 
