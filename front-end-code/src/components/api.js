@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const baseURL = window.location.protocol + "//" +
+    window.location.hostname +
+    (window.location.port ? ":" + window.location.port : "") + "/";
+
 const api = axios.create({
-    baseURL: 'http://localhost:80/',
+    baseURL: baseURL,
 });
 
 export default api;

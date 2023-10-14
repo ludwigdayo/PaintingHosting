@@ -31,6 +31,42 @@ go build .
 
 
 
+## How to deploy
+
+- Create these directory as:
+
+  ````
+  ```
+  Workspace
+  ├── db
+  ├── dist
+  └── ImagesData
+  ```
+  ````
+
+- Place the front-end build product in the *dist* folder
+
+- Make sure the three folders are on the same as the executable file
+
+  ```
+  Workspace
+  ├── db
+  │   └── imageshow-server-database.db
+  ├── dist
+  │   ├── index.html
+  │   └── static
+  ├── ImagesData
+  └── PaintingHosting-linux-amd64
+  ```
+
+- Now you can run the executable
+
+  ```shell
+  $ ./PaintingHosting-linux-amd64 -p 80 -h 0.0.0.0
+  ```
+
+  
+
 ## Licence
 
 [GPL-3.0](https://github.com/succerseng/PaintingHosting/blob/main/LICENSE)
