@@ -1,4 +1,5 @@
-PaintingHosting.exe
+PaintingHosting-*
 db
 dist
 ImagesData
+out

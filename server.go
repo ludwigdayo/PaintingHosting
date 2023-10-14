@@ -1,22 +1,26 @@
 package main
 
 import (
-    "fmt"
-    "net/http"
-    "log"
-	"strconv"
 	"encoding/json"
+	"flag"
+	"fmt"
 	"io/ioutil"
+	"log"
+	"net/http"
 	"os"
-	"github.com/google/uuid"
 	"path/filepath"
+	"strconv"
+
+	"github.com/google/uuid"
 )
 
-// 存放图片
-var localDirPath = "./ImagesData/"
+// 路径
+var localDirPath = "./images-data"
+var dbPath = "./db/imageshow-server-database.db"
+var frontPath = "./dist"
 
 // 返回作者信息
-func authorinfoHandle(w http.ResponseWriter, r *http.Request){
+func authorinfoHandle(w http.ResponseWriter, r *http.Request) {
 	// 添加跨域头部
 	w.Header().Set("Access-Control-Allow-Origin", "*") // 允许来自任意域的请求
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -31,7 +35,7 @@ func authorinfoHandle(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	log.Println(author.AuthorName + author.Introduce + author.Image + "=> 发的几把玩意") 
+	log.Println(author.AuthorName + author.Introduce + author.Image + "=> 发的几把玩意")
 
 	// 将查询结果转换为 JSON
 	jsonData, err := json.Marshal(author)
@@ -51,7 +55,7 @@ func authorinfoHandle(w http.ResponseWriter, r *http.Request){
 }
 
 // 接收作者信息
-func authorinfoUploadHandle(w http.ResponseWriter, r *http.Request){
+func authorinfoUploadHandle(w http.ResponseWriter, r *http.Request) {
 	// 添加跨域头部
 	w.Header().Set("Access-Control-Allow-Origin", "*") // 允许来自任意域的请求
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -75,10 +79,10 @@ func authorinfoUploadHandle(w http.ResponseWriter, r *http.Request){
 	imageStr := r.FormValue("image")
 
 	// 作者头像直接存数据库
-	author := Author {
-		AuthorName:	authorName,
-		Introduce:	introduce,
-		Image:		imageStr,
+	author := Author{
+		AuthorName: authorName,
+		Introduce:  introduce,
+		Image:      imageStr,
 	}
 
 	log.Println(author.Image + "=> upload author Image")
@@ -96,7 +100,7 @@ func authorinfoUploadHandle(w http.ResponseWriter, r *http.Request){
 }
 
 // 返回交互信息
-func interactInfoHandle(w http.ResponseWriter, r *http.Request){
+func interactInfoHandle(w http.ResponseWriter, r *http.Request) {
 	// 添加跨域头部
 	w.Header().Set("Access-Control-Allow-Origin", "*") // 允许来自任意域的请求
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -137,7 +141,7 @@ func interactInfoHandle(w http.ResponseWriter, r *http.Request){
 }
 
 // 接收交互信息
-func interactInfoUploadHandle(w http.ResponseWriter, r *http.Request){
+func interactInfoUploadHandle(w http.ResponseWriter, r *http.Request) {
 	// 添加跨域头部
 	w.Header().Set("Access-Control-Allow-Origin", "*") // 允许来自任意域的请求
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -183,11 +187,11 @@ func interactInfoUploadHandle(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	interact := Interact {
-		ImageId:	imageId,
-		Like:		like,
-		Favorite:	favorite,
-		Comment:	commentStr,
+	interact := Interact{
+		ImageId:  imageId,
+		Like:     like,
+		Favorite: favorite,
+		Comment:  commentStr,
 	}
 
 	err = saveInteractInfo(interact)
@@ -304,7 +308,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		CreateTime: createTime,
 		Story:      story,
 		Price:      priceNum,
-		Path:      filePath, 
+		Path:       filePath,
 		Tags:       tags,
 	}
 
@@ -329,7 +333,7 @@ func imagesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-    // 解析查询参数
+	// 解析查询参数
 	startStr := r.URL.Query().Get("start")
 	endStr := r.URL.Query().Get("end")
 	isThumbnailStr := r.URL.Query().Get("isThumbnail")
@@ -382,38 +386,61 @@ func imagesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	port := "80"
+	// 资源判断
+	paths := []string{localDirPath, dbPath, frontPath}
+
+	for _, path := range paths {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			log.Printf("Error: Path %s does not exist\n", path)
+			return
+		} else {
+			log.Printf("Path %s exists\n", path)
+		}
+	}
+
+	// 设置自定义的用法信息
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s -p port -h address\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+
+	// 请注意 这里的端口同时用于数据传输与提供前端页面 请务必与前端对应
+	port := 80
+	ipAddress := "0.0.0.0"
+	flag.IntVar(&port, "p", 80, "Specify the port number. The default is 80. It must correspond to the front end.")
+	flag.StringVar(&ipAddress, "h", "0.0.0.0", "Specify host address. Default is IP (0.0.0.0)")
+	flag.Parse()
+	address := ipAddress + ":" + strconv.Itoa(port)
 
 	// 配置静态文件目录
-	staticDir, _ := filepath.Abs("dist")
+	staticDir, _ := filepath.Abs(frontPath)
 
-    // 作者详情
-    http.HandleFunc("/author", authorinfoHandle)
+	// 作者详情
+	http.HandleFunc("/author", authorinfoHandle)
 
-    // 上传作者信息
-    http.HandleFunc("/authorUpload", authorinfoUploadHandle)
+	// 上传作者信息
+	http.HandleFunc("/authorUpload", authorinfoUploadHandle)
 
-    // 上传交互信息
-    http.HandleFunc("/interactUpload", interactInfoUploadHandle)
-    
-    // 作品交互
-    http.HandleFunc("/interact", interactInfoHandle)
+	// 上传交互信息
+	http.HandleFunc("/interactUpload", interactInfoUploadHandle)
 
-    // 返回图像
-    http.HandleFunc("/images", imagesHandler)
+	// 作品交互
+	http.HandleFunc("/interact", interactInfoHandle)
+
+	// 返回图像
+	http.HandleFunc("/images", imagesHandler)
 
 	// 处理上传
-    http.HandleFunc("/upload", uploadHandler)
+	http.HandleFunc("/upload", uploadHandler)
 
 	// 设置静态文件处理器
 	http.Handle("/", http.FileServer(http.Dir(staticDir)))
-	
-	log.Println("Server will run on", port)
 
-    err := http.ListenAndServe(":" + port, nil)
-    if err != nil {
-        log.Println("ListenAndServe: ", err)
-    }
+	log.Println("Server run on:", address)
+	log.Println("If access fails please check permissions")
+
+	err := http.ListenAndServe(address, nil)
+	if err != nil {
+		log.Println("ListenAndServe: ", err)
+	}
 }
-
-
