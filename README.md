@@ -24,9 +24,20 @@
 
 ## Build Setup
 
-``` bash
+Building the project requires [**go**](https://go.dev/doc/install) and [**node**](https://nodejs.org/en/download/current) packages, Since it depends on [cgo](https://go.dev/blog/cgo) you also need to install [**gcc**](https://gcc.gnu.org/install/binaries.html) package
+
+``` shell
 # In the project root directory
 go build .
+
+# Switch working path
+cd front-end-code
+
+# install dependencies
+npm install
+
+# build for production with minification
+npm run build
 ```
 
 
@@ -59,7 +70,7 @@ go build .
   └── PaintingHosting-linux-amd64
   ```
 
-- Now you can run the executable
+- Now you can run the [executable](https://github.com/succerseng/PaintingHosting/releases/latest)
 
   ```shell
   $ ./PaintingHosting-linux-amd64 -p 80 -h 0.0.0.0
